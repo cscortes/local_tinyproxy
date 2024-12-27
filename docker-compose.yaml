@@ -1,0 +1,35 @@
+
+services:
+  cache-tinyproxy:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM alpine:latest
+        EXPOSE 8080
+        RUN apk update
+        RUN apk --no-cache add tzdata squid bash vim tinyproxy
+        ENV TZ="America/Denver"
+        RUN cp /usr/share/zoneinfo/America/Denver /etc/localtime
+        RUN echo "America/Denver" > /etc/timezone
+
+    ports:
+      - 8080:8080
+    entrypoint: "tinyproxy -d -c /etc/tinyproxy.conf"
+    hostname: local-proxy
+    image: local-proxy-img
+    container_name: local-proxy
+    volumes:
+      - ./tinyproxy.conf:/etc/tinyproxy.conf:ro
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: "1g"
+    networks:
+      - shared_net
+
+# use a bridge network so can be used by others
+networks:
+  shared_net:
+    driver: bridge
